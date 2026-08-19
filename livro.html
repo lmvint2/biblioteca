@@ -58,6 +58,7 @@
   .emprestimo-form input{ flex:1; padding:8px 10px; background:var(--bg); border:1px solid var(--line); border-radius:6px; color:var(--text); font-size:13px; }
   .emprestimo-form button{ background:var(--gold); color:var(--bg); border:none; border-radius:6px; padding:8px 14px; font-weight:700; cursor:pointer; font-size:12px; white-space:nowrap; }
   .devolver-btn{ background:none; border:1px solid var(--gold-dim); color:var(--gold); border-radius:5px; padding:4px 9px; font-size:11px; cursor:pointer; }
+  .apagar-btn{ background:none; border:none; color:#a05a5a; font-size:11px; cursor:pointer; text-decoration:underline; padding:0; }
 
   .precos-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
   .preco-card{ background:var(--bg-card); border:1px solid var(--line); border-radius:10px; padding:14px 10px; text-align:center; }
@@ -139,11 +140,13 @@ function render(){
   const pct = totalPaginas ? Math.min(100, Math.round((paginaAtual/totalPaginas)*100)) : 0;
 
   const diarioHtml = (livro.diario && livro.diario.length)
-    ? livro.diario.slice().reverse().map(d => `
+    ? livro.diario.map((d, idxReal) => `
         <div class="diario-item">
           <div class="diario-data">${formatarData(d.data)}</div>
-          <div class="diario-nota">${d.nota||''}<span class="diario-pag">até a página ${d.paginaAte}</span></div>
-        </div>`).join('')
+          <div class="diario-nota">${d.nota||''}<span class="diario-pag">até a página ${d.paginaAte}
+            ${podeEditar ? ` · <button class="apagar-btn" onclick="apagarDiario(${idxReal})">apagar</button>` : ''}
+          </span></div>
+        </div>`).reverse().join('')
     : '<div class="vazio">Nenhum registro de leitura ainda.</div>';
 
   const activeLoan = (livro.emprestimos||[]).find(e => !e.dataDevolucao);
@@ -154,6 +157,7 @@ function render(){
           <span class="ficha-status ${e.dataDevolucao?'status-devolvido':'status-fora'}">
             ${e.dataDevolucao ? 'devolvido em '+formatarData(e.dataDevolucao) : 'desde '+formatarData(e.dataEmprestimo)}
             ${(!e.dataDevolucao && podeEditar) ? `<button class="devolver-btn" onclick="marcarDevolvido(${idxReal})">devolvido</button>` : ''}
+            ${podeEditar ? `<button class="apagar-btn" onclick="apagarEmprestimo(${idxReal})">apagar</button>` : ''}
           </span>
         </div>`;
       }).reverse().join('')
@@ -245,6 +249,22 @@ async function registrarEmprestimo(){
   const nome = document.getElementById('nomeEmprestimo').value.trim();
   if(!nome) return;
   const emprestimos = [...(livroAtual.emprestimos||[]), { nome, dataEmprestimo: hoje(), dataDevolucao: null }];
+  await salvar({ emprestimos });
+  livroAtual.emprestimos = emprestimos;
+  render();
+}
+
+async function apagarDiario(idx){
+  if(!confirm('Apagar este registro do diário?')) return;
+  const diario = (livroAtual.diario||[]).filter((_,i) => i!==idx);
+  await salvar({ diario });
+  livroAtual.diario = diario;
+  render();
+}
+
+async function apagarEmprestimo(idx){
+  if(!confirm('Apagar este registro de empréstimo?')) return;
+  const emprestimos = (livroAtual.emprestimos||[]).filter((_,i) => i!==idx);
   await salvar({ emprestimos });
   livroAtual.emprestimos = emprestimos;
   render();
