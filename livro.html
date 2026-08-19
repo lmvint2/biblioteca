@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ficha do livro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#06060f; --bg-card:#0e0e1c; --gold:#D4A04C; --gold-dim:#8a6d38;
+    --text:#eae7de; --text-dim:#8b8a9a; --line:#1c1c2e;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; }
+  .wrap{ max-width:560px; margin:0 auto; padding:28px 20px 60px; }
+
+  .stamp-row{ display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px dashed var(--line); padding-bottom:14px; margin-bottom:22px; }
+  .stamp{ font-family:'DM Mono',monospace; font-size:11px; letter-spacing:2px; color:var(--gold-dim); text-transform:uppercase; border:1px solid var(--gold-dim); padding:4px 8px; border-radius:2px; transform:rotate(-2deg); }
+  .stamp.editavel{ color:var(--gold); border-color:var(--gold); }
+  .id-num{ font-family:'DM Mono',monospace; font-size:11px; color:var(--text-dim); }
+
+  h1{ font-family:'Bebas Neue',sans-serif; font-weight:400; font-size:44px; line-height:0.95; margin:0 0 6px; }
+  .autor{ color:var(--gold); font-size:15px; margin:0 0 20px; }
+
+  .sinopse{ font-size:15px; line-height:1.65; margin-bottom:34px; }
+
+  section{ margin-bottom:34px; }
+  .section-title{ font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:1px; color:var(--gold); margin:0 0 14px; display:flex; align-items:center; gap:10px; }
+  .section-title::after{ content:''; flex:1; height:1px; background:var(--line); }
+
+  .progress-box{ background:var(--bg-card); border:1px solid var(--line); border-radius:10px; padding:18px; }
+  .progress-num{ font-family:'DM Mono',monospace; font-size:13px; color:var(--text-dim); margin-bottom:10px; }
+  .progress-num b{ color:var(--gold); font-weight:500; }
+  .bar-track{ height:6px; background:var(--line); border-radius:3px; overflow:hidden; }
+  .bar-fill{ height:100%; background:var(--gold); border-radius:3px; transition:width .6s ease; }
+  .progress-edit{ display:flex; gap:8px; margin-top:14px; align-items:center; }
+  .progress-edit input{ width:80px; padding:8px 10px; background:var(--bg); border:1px solid var(--line); border-radius:6px; color:var(--text); font-size:14px; }
+  .progress-edit button{ background:var(--gold); color:var(--bg); border:none; border-radius:6px; padding:8px 14px; font-weight:700; cursor:pointer; font-size:13px; }
+
+  .diario-item{ display:flex; gap:14px; padding:12px 0; border-bottom:1px solid var(--line); }
+  .diario-item:last-child{ border-bottom:none; }
+  .diario-data{ font-family:'DM Mono',monospace; font-size:11px; color:var(--gold-dim); white-space:nowrap; padding-top:2px; }
+  .diario-nota{ font-size:14px; line-height:1.5; }
+  .diario-pag{ display:block; font-size:11px; color:var(--text-dim); margin-top:3px; }
+  .diario-form{ margin-top:14px; display:flex; flex-direction:column; gap:8px; }
+  .diario-form input, .diario-form textarea{ padding:9px 11px; background:var(--bg-card); border:1px solid var(--line); border-radius:6px; color:var(--text); font-size:14px; font-family:inherit; }
+  .diario-form button{ align-self:flex-start; background:var(--gold); color:var(--bg); border:none; border-radius:6px; padding:8px 16px; font-weight:700; cursor:pointer; font-size:13px; }
+
+  .card-ficha{ background:var(--bg-card); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  .ficha-row{ display:flex; justify-content:space-between; align-items:center; padding:13px 16px; font-size:13px; border-bottom:1px solid var(--line); }
+  .ficha-row:last-child{ border-bottom:none; }
+  .ficha-status{ font-family:'DM Mono',monospace; font-size:11px; display:flex; align-items:center; gap:8px; }
+  .status-fora{ color:var(--gold); }
+  .status-devolvido{ color:var(--text-dim); }
+  .vazio{ color:var(--text-dim); font-size:13px; font-style:italic; padding:14px 16px; }
+  .emprestimo-form{ display:flex; gap:8px; padding:12px 16px; }
+  .emprestimo-form input{ flex:1; padding:8px 10px; background:var(--bg); border:1px solid var(--line); border-radius:6px; color:var(--text); font-size:13px; }
+  .emprestimo-form button{ background:var(--gold); color:var(--bg); border:none; border-radius:6px; padding:8px 14px; font-weight:700; cursor:pointer; font-size:12px; white-space:nowrap; }
+  .devolver-btn{ background:none; border:1px solid var(--gold-dim); color:var(--gold); border-radius:5px; padding:4px 9px; font-size:11px; cursor:pointer; }
+
+  .precos-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+  .preco-card{ background:var(--bg-card); border:1px solid var(--line); border-radius:10px; padding:14px 10px; text-align:center; }
+  .preco-loja{ font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--text-dim); margin-bottom:6px; }
+  .preco-valor{ font-family:'DM Mono',monospace; font-size:15px; color:var(--gold); }
+  .preco-card a{ text-decoration:none; color:inherit; display:block; }
+
+  footer{ text-align:center; color:var(--text-dim); font-size:11px; margin-top:40px; }
+  .loading, .erro{ text-align:center; padding:80px 20px; color:var(--text-dim); font-size:14px; }
+  .erro b{ color:var(--gold); display:block; margin-bottom:8px; font-family:'Bebas Neue'; font-size:22px; }
+  .salvando{ font-size:11px; color:var(--text-dim); }
+</style>
+</head>
+<body>
+  <div class="wrap" id="app"><div class="loading">carregando ficha do livro…</div></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+<script>
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const params = new URLSearchParams(window.location.search);
+const id = params.get('id');
+const key = params.get('key');
+let podeEditar = false;
+let docRef, livroAtual;
+
+async function sha256(texto){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(texto));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+function formatarData(iso){
+  if(!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+function hoje(){ return new Date().toISOString().slice(0,10); }
+
+async function salvar(campos){
+  await docRef.update({ ...campos, chaveHash: livroAtual.chaveHash });
+}
+
+async function init(){
+  const app = document.getElementById('app');
+  if(!id){
+    app.innerHTML = '<div class="erro"><b>Nenhum livro informado</b>Adicione ?id=slug-do-livro ao link.</div>';
+    return;
+  }
+  docRef = db.collection('livros').doc(id);
+  let snap;
+  try{ snap = await docRef.get(); }
+  catch(e){
+    app.innerHTML = '<div class="erro"><b>Não foi possível carregar</b>Verifique a configuração do Firebase.</div>';
+    return;
+  }
+  if(!snap.exists){
+    app.innerHTML = '<div class="erro"><b>Livro não encontrado</b>Não há registro para "'+id+'".</div>';
+    return;
+  }
+  livroAtual = snap.data();
+
+  if(key){
+    const hash = await sha256(key);
+    podeEditar = (hash === livroAtual.chaveHash);
+  }
+
+  render();
+}
+
+function render(){
+  const livro = livroAtual;
+  const app = document.getElementById('app');
+  const ultimaLeitura = (livro.diario && livro.diario.length) ? livro.diario[livro.diario.length-1] : null;
+  const paginaAtual = ultimaLeitura ? ultimaLeitura.paginaAte : 0;
+  const totalPaginas = livro.totalPaginas || 0;
+  const pct = totalPaginas ? Math.min(100, Math.round((paginaAtual/totalPaginas)*100)) : 0;
+
+  const diarioHtml = (livro.diario && livro.diario.length)
+    ? livro.diario.slice().reverse().map(d => `
+        <div class="diario-item">
+          <div class="diario-data">${formatarData(d.data)}</div>
+          <div class="diario-nota">${d.nota||''}<span class="diario-pag">até a página ${d.paginaAte}</span></div>
+        </div>`).join('')
+    : '<div class="vazio">Nenhum registro de leitura ainda.</div>';
+
+  const activeLoan = (livro.emprestimos||[]).find(e => !e.dataDevolucao);
+  const emprestimosHtml = (livro.emprestimos && livro.emprestimos.length)
+    ? livro.emprestimos.slice().map((e, idxReal) => {
+        return `<div class="ficha-row">
+          <span>${e.nome}</span>
+          <span class="ficha-status ${e.dataDevolucao?'status-devolvido':'status-fora'}">
+            ${e.dataDevolucao ? 'devolvido em '+formatarData(e.dataDevolucao) : 'desde '+formatarData(e.dataEmprestimo)}
+            ${(!e.dataDevolucao && podeEditar) ? `<button class="devolver-btn" onclick="marcarDevolvido(${idxReal})">devolvido</button>` : ''}
+          </span>
+        </div>`;
+      }).reverse().join('')
+    : '<div class="vazio">Este exemplar nunca foi emprestado.</div>';
+
+  const c = livro.catalogo || {};
+  const precoHtml = `<div class="precos-grid">
+    <div class="preco-card"><a href="${c.linkAmazon||'#'}" target="_blank" rel="noopener"><div class="preco-loja">Amazon</div><div class="preco-valor">${c.amazon||'—'}</div></a></div>
+    <div class="preco-card"><a href="${c.linkTravessa||'#'}" target="_blank" rel="noopener"><div class="preco-loja">Travessa</div><div class="preco-valor">${c.travessa||'—'}</div></a></div>
+    <div class="preco-card"><a href="${c.linkEstanteVirtual||'#'}" target="_blank" rel="noopener"><div class="preco-loja">Est. Virtual</div><div class="preco-valor">${c.estanteVirtual||'—'}</div></a></div>
+  </div>`;
+
+  app.innerHTML = `
+    <div class="stamp-row">
+      <div class="stamp ${podeEditar?'editavel':''}">${podeEditar ? 'edição liberada' : 'ficha de biblioteca'}</div>
+      <div class="id-num">Nº ${id}</div>
+    </div>
+    <h1>${livro.titulo}</h1>
+    <p class="autor">${livro.autor||''}</p>
+    ${livro.sinopse ? `<p class="sinopse">${livro.sinopse}</p>` : ''}
+
+    ${totalPaginas ? `
+    <section>
+      <div class="section-title">Progresso de leitura</div>
+      <div class="progress-box">
+        <div class="progress-num">página <b>${paginaAtual}</b> de ${totalPaginas} · ${pct}%</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+        ${podeEditar ? `
+        <div class="progress-edit">
+          <input type="number" id="inputPagina" min="0" max="${totalPaginas}" placeholder="pág. atual" value="${paginaAtual}">
+          <button onclick="atualizarProgresso()">Atualizar</button>
+          <span class="salvando" id="salvandoProgresso"></span>
+        </div>` : ''}
+      </div>
+    </section>` : ''}
+
+    <section>
+      <div class="section-title">Diário de leitura</div>
+      ${diarioHtml}
+      ${podeEditar ? `
+      <div class="diario-form">
+        <input type="number" id="notaPagina" placeholder="até a página...">
+        <textarea id="notaTexto" rows="2" placeholder="sua impressão sobre essa parte..."></textarea>
+        <button onclick="adicionarDiario()">Adicionar registro</button>
+      </div>` : ''}
+    </section>
+
+    <section>
+      <div class="section-title">Empréstimos</div>
+      <div class="card-ficha">
+        ${emprestimosHtml}
+        ${(podeEditar && !activeLoan) ? `
+        <div class="emprestimo-form">
+          <input type="text" id="nomeEmprestimo" placeholder="Nome de quem vai levar">
+          <button onclick="registrarEmprestimo()">Registrar</button>
+        </div>` : ''}
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">Onde encontrar</div>
+      ${precoHtml}
+    </section>
+
+    <footer>biblioteca pessoal · página gerada a partir do catálogo</footer>
+  `;
+}
+
+async function atualizarProgresso(){
+  const val = parseInt(document.getElementById('inputPagina').value, 10) || 0;
+  const diario = livroAtual.diario || [];
+  const novo = [...diario, { data: hoje(), paginaAte: val, nota: '' }];
+  await salvar({ diario: novo });
+  livroAtual.diario = novo;
+  render();
+}
+
+async function adicionarDiario(){
+  const pagina = parseInt(document.getElementById('notaPagina').value, 10) || 0;
+  const nota = document.getElementById('notaTexto').value.trim();
+  if(!nota && !pagina) return;
+  const diario = [...(livroAtual.diario||[]), { data: hoje(), paginaAte: pagina, nota }];
+  await salvar({ diario });
+  livroAtual.diario = diario;
+  render();
+}
+
+async function registrarEmprestimo(){
+  const nome = document.getElementById('nomeEmprestimo').value.trim();
+  if(!nome) return;
+  const emprestimos = [...(livroAtual.emprestimos||[]), { nome, dataEmprestimo: hoje(), dataDevolucao: null }];
+  await salvar({ emprestimos });
+  livroAtual.emprestimos = emprestimos;
+  render();
+}
+
+async function marcarDevolvido(idx){
+  const emprestimos = (livroAtual.emprestimos||[]).map((e,i) => i===idx ? { ...e, dataDevolucao: hoje() } : e);
+  await salvar({ emprestimos });
+  livroAtual.emprestimos = emprestimos;
+  render();
+}
+
+init();
+</script>
+</body>
+</html>
