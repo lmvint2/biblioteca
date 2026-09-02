@@ -202,7 +202,12 @@ function formatarData(iso){
 function hoje(){ return new Date().toISOString().slice(0,10); }
 
 async function salvar(campos){
-  await docRef.update({ ...campos, chaveHash: livroAtual.chaveHash });
+  try{
+    await docRef.update({ ...campos, chaveHash: livroAtual.chaveHash });
+  }catch(e){
+    alert('Não foi possível salvar essa alteração. O Firestore recusou a gravação (provavelmente as regras de segurança ainda não liberam esse campo).');
+    throw e;
+  }
 }
 
 async function init(){
