@@ -272,6 +272,8 @@ function render(){
       <textarea id="inputSinopse">${escapeHtml(livro.sinopse||'')}</textarea>
       <label>URL da capa (opcional — deixe em branco para buscar automaticamente)</label>
       <input type="text" id="inputCapa" value="${escapeHtml(livro.capaUrl||'')}">
+      <label>Total de páginas (0 = esconde a seção de progresso)</label>
+      <input type="number" id="inputTotalPaginas" min="0" value="${livro.totalPaginas||0}">
       <button class="btn-ouro" onclick="salvarCabecalho()">Salvar detalhes</button>
     </div>`
     : `
@@ -455,8 +457,9 @@ async function salvarCabecalho(){
   const autor = document.getElementById('inputAutor').value.trim();
   const sinopse = document.getElementById('inputSinopse').value.trim();
   const capaUrl = document.getElementById('inputCapa').value.trim();
-  await salvar({ titulo, autor, sinopse, capaUrl });
-  Object.assign(livroAtual, { titulo, autor, sinopse, capaUrl });
+  const totalPaginas = parseInt(document.getElementById('inputTotalPaginas').value, 10) || 0;
+  await salvar({ titulo, autor, sinopse, capaUrl, totalPaginas });
+  Object.assign(livroAtual, { titulo, autor, sinopse, capaUrl, totalPaginas });
   editandoCabecalho = false;
   render();
 }
