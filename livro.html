@@ -155,6 +155,7 @@
   .erro{ text-align:center; padding:90px 20px; color:var(--ink-dim); font-size:14px; }
   .erro b{ color:var(--terracota-dim); display:block; margin-bottom:8px; font-family:'Fraunces',serif; font-weight:600; font-size:24px; }
   .salvando{ font-size:11px; color:var(--ink-dim); }
+  #statusSugestoes{ font-size:12px; font-weight:500; color:var(--terracota-dim); min-height:14px; }
 </style>
 </head>
 <body>
@@ -331,9 +332,8 @@ async function buscarSugestoes(){
   }
 
   if(status){
-    const avisoTags = preenchidos.includes('gêneros') ? ' (os gêneros têm um botão "Salvar" próprio, logo abaixo desta seção)' : '';
     status.textContent = preenchidos.length
-      ? `Preenchi: ${preenchidos.join(', ')}. Revise e clique em Salvar${avisoTags}.`
+      ? `Preenchi: ${preenchidos.join(', ')}. Revise e clique em "Salvar tudo".`
       : 'Encontrei o livro, mas esses campos já estavam preenchidos.';
   }
 }
@@ -363,9 +363,11 @@ function render(){
       <input type="text" id="inputCapa" value="${escapeHtml(livro.capaUrl||'')}">
       <label>Total de páginas (0 = esconde a seção de progresso)</label>
       <input type="number" id="inputTotalPaginas" min="0" value="${livro.totalPaginas||0}">
+      <label>Gêneros (separados por vírgula)</label>
+      <input type="text" id="inputTags" value="${escapeHtml((livro.tags||[]).join(', '))}">
       <button class="editar-toggle" type="button" onclick="buscarSugestoes()">✨ buscar sinopse, capa, páginas e gênero automaticamente</button>
       <span class="salvando" id="statusSugestoes"></span>
-      <button class="btn-ouro" onclick="salvarCabecalho()">Salvar detalhes</button>
+      <button class="btn-ouro" onclick="salvarCabecalho()">Salvar tudo</button>
     </div>`
     : `
     <h1>${escapeHtml(livro.titulo)}</h1>
@@ -388,12 +390,7 @@ function render(){
     </div>` : '';
 
   const tags = livro.tags || [];
-  const tagsRowHtml = tags.length ? `<div class="tags-row">${tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>` : '';
-  const tagsEditHtml = podeEditar ? `
-    <div class="tags-edit">
-      <input type="text" id="inputTags" placeholder="gêneros, separados por vírgula" value="${escapeHtml(tags.join(', '))}">
-      <button onclick="salvarTags()">Salvar</button>
-    </div>` : '';
+  const tagsRowHtml = (tags.length && !editandoCabecalho) ? `<div class="tags-row">${tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>` : '';
 
   let statChips = [];
   if(totalPaginas){
@@ -473,7 +470,6 @@ function render(){
     ${statusHtml}
     ${estrelasHtml}
     ${tagsRowHtml}
-    ${tagsEditHtml}
 
     ${totalPaginas ? `
     <section>
@@ -549,8 +545,9 @@ async function salvarCabecalho(){
   const sinopse = document.getElementById('inputSinopse').value.trim();
   const capaUrl = document.getElementById('inputCapa').value.trim();
   const totalPaginas = parseInt(document.getElementById('inputTotalPaginas').value, 10) || 0;
-  await salvar({ titulo, autor, sinopse, capaUrl, totalPaginas });
-  Object.assign(livroAtual, { titulo, autor, sinopse, capaUrl, totalPaginas });
+  const tags = document.getElementById('inputTags').value.split(',').map(t => t.trim()).filter(Boolean);
+  await salvar({ titulo, autor, sinopse, capaUrl, totalPaginas, tags });
+  Object.assign(livroAtual, { titulo, autor, sinopse, capaUrl, totalPaginas, tags });
   editandoCabecalho = false;
   render();
 }
@@ -566,14 +563,6 @@ async function avaliar(n){
   const avaliacao = (livroAtual.avaliacao === n) ? 0 : n;
   await salvar({ avaliacao });
   livroAtual.avaliacao = avaliacao;
-  render();
-}
-
-async function salvarTags(){
-  const bruto = document.getElementById('inputTags').value;
-  const tags = bruto.split(',').map(t => t.trim()).filter(Boolean);
-  await salvar({ tags });
-  livroAtual.tags = tags;
   render();
 }
 
