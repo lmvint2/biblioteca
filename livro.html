@@ -320,41 +320,40 @@ async function buscarSugestoes(){
   if(status) status.textContent = 'Buscando na Open Library e no Google Books…';
 
   const info = await buscarInfoLivro(titulo, autor);
-  if(!info.capa && !info.paginas && !info.descricao && !info.generos.length){
-    if(status) status.textContent = 'Nada encontrado pra esse título/autor.';
-    return;
-  }
 
   let preenchidos = [];
+  let naoEncontrados = [];
 
   const campoSinopse = document.getElementById('inputSinopse');
-  if(!campoSinopse.value.trim() && info.descricao){
-    campoSinopse.value = info.descricao;
-    preenchidos.push('sinopse');
+  if(!campoSinopse.value.trim()){
+    if(info.descricao){ campoSinopse.value = info.descricao; preenchidos.push('sinopse'); }
+    else naoEncontrados.push('sinopse');
   }
 
   const campoPaginas = document.getElementById('inputTotalPaginas');
-  if((!campoPaginas.value || campoPaginas.value === '0') && info.paginas){
-    campoPaginas.value = info.paginas;
-    preenchidos.push('total de páginas');
+  if(!campoPaginas.value || campoPaginas.value === '0'){
+    if(info.paginas){ campoPaginas.value = info.paginas; preenchidos.push('total de páginas'); }
+    else naoEncontrados.push('total de páginas');
   }
 
   const campoCapa = document.getElementById('inputCapa');
-  if(!campoCapa.value.trim() && info.capa){
-    campoCapa.value = info.capa;
-    preenchidos.push('capa');
+  if(!campoCapa.value.trim()){
+    if(info.capa){ campoCapa.value = info.capa; preenchidos.push('capa'); }
+    else naoEncontrados.push('capa');
   }
 
   const campoTags = document.getElementById('inputTags');
-  if(campoTags && !campoTags.value.trim() && info.generos.length){
-    campoTags.value = info.generos.join(', ');
-    preenchidos.push('gêneros');
+  if(campoTags && !campoTags.value.trim()){
+    if(info.generos.length){ campoTags.value = info.generos.join(', '); preenchidos.push('gêneros'); }
+    else naoEncontrados.push('gêneros');
   }
 
   if(status){
-    status.textContent = preenchidos.length
-      ? `Preenchi: ${preenchidos.join(', ')}. Revise e clique em "Salvar tudo".`
-      : 'Encontrei o livro, mas esses campos já estavam preenchidos.';
+    const partes = [];
+    if(preenchidos.length) partes.push(`Preenchi: ${preenchidos.join(', ')}.`);
+    if(naoEncontrados.length) partes.push(`Não encontrei ${naoEncontrados.join(', ')} em nenhuma fonte gratuita — preencha manualmente.`);
+    status.textContent = partes.length ? partes.join(' ') : 'Todos os campos já estavam preenchidos.';
+    if(preenchidos.length) status.textContent += ' Revise e clique em "Salvar tudo".';
   }
 }
 
