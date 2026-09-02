@@ -175,6 +175,7 @@ let podeEditar = false;
 let docRef, livroAtual;
 let editandoCabecalho = false;
 let capaAuto = null;
+const infoGoogleBooksCache = new Map();
 
 const STATUS_LABEL = { 'quero-ler':'Quero ler', 'lendo':'Lendo', 'lido':'Lido' };
 
@@ -238,15 +239,70 @@ async function init(){
   tentarCapaAutomatica();
 }
 
-async function tentarCapaAutomatica(){
-  if(!livroAtual || livroAtual.capaUrl || capaAuto || !livroAtual.titulo) return;
+async function buscarInfoGoogleBooks(titulo, autor){
+  const chave = `${titulo}|${autor||''}`;
+  if(infoGoogleBooksCache.has(chave)) return infoGoogleBooksCache.get(chave);
+  let info = null;
   try{
-    const q = encodeURIComponent(`intitle:${livroAtual.titulo} inauthor:${livroAtual.autor||''}`);
+    const q = encodeURIComponent(`intitle:${titulo} inauthor:${autor||''}`);
     const resp = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1`);
     const json = await resp.json();
-    const link = json.items && json.items[0] && json.items[0].volumeInfo && json.items[0].volumeInfo.imageLinks && json.items[0].volumeInfo.imageLinks.thumbnail;
-    if(link){ capaAuto = link.replace('http://','https://'); render(); }
-  }catch(e){ /* sem capa disponível, tudo bem */ }
+    info = (json.items && json.items[0] && json.items[0].volumeInfo) || null;
+  }catch(e){ /* sem info disponível, tudo bem */ }
+  infoGoogleBooksCache.set(chave, info);
+  return info;
+}
+
+async function tentarCapaAutomatica(){
+  if(!livroAtual || livroAtual.capaUrl || capaAuto || !livroAtual.titulo) return;
+  const info = await buscarInfoGoogleBooks(livroAtual.titulo, livroAtual.autor);
+  const link = info && info.imageLinks && info.imageLinks.thumbnail;
+  if(link){ capaAuto = link.replace('http://','https://'); render(); }
+}
+
+async function buscarSugestoes(){
+  const status = document.getElementById('statusSugestoes');
+  const titulo = document.getElementById('inputTitulo').value.trim();
+  const autor = document.getElementById('inputAutor').value.trim();
+  if(!titulo){ if(status) status.textContent = 'Preencha o título antes de buscar.'; return; }
+  if(status) status.textContent = 'Buscando no Google Books…';
+
+  const info = await buscarInfoGoogleBooks(titulo, autor);
+  if(!info){ if(status) status.textContent = 'Nada encontrado pra esse título/autor.'; return; }
+
+  let preenchidos = [];
+
+  const campoSinopse = document.getElementById('inputSinopse');
+  if(!campoSinopse.value.trim() && info.description){
+    campoSinopse.value = info.description;
+    preenchidos.push('sinopse');
+  }
+
+  const campoPaginas = document.getElementById('inputTotalPaginas');
+  if((!campoPaginas.value || campoPaginas.value === '0') && info.pageCount){
+    campoPaginas.value = info.pageCount;
+    preenchidos.push('total de páginas');
+  }
+
+  const campoCapa = document.getElementById('inputCapa');
+  if(!campoCapa.value.trim() && info.imageLinks && info.imageLinks.thumbnail){
+    campoCapa.value = info.imageLinks.thumbnail.replace('http://','https://');
+    preenchidos.push('capa');
+  }
+
+  const campoTags = document.getElementById('inputTags');
+  if(campoTags && !campoTags.value.trim() && info.categories && info.categories.length){
+    const generos = [...new Set(info.categories.flatMap(c => c.split(' / ').map(s => s.trim())))];
+    campoTags.value = generos.join(', ');
+    preenchidos.push('gêneros');
+  }
+
+  if(status){
+    const avisoTags = preenchidos.includes('gêneros') ? ' (os gêneros têm um botão "Salvar" próprio, logo abaixo desta seção)' : '';
+    status.textContent = preenchidos.length
+      ? `Preenchi: ${preenchidos.join(', ')}. Revise e clique em Salvar${avisoTags}.`
+      : 'Encontrei o livro, mas esses campos já estavam preenchidos.';
+  }
 }
 
 function render(){
@@ -274,6 +330,8 @@ function render(){
       <input type="text" id="inputCapa" value="${escapeHtml(livro.capaUrl||'')}">
       <label>Total de páginas (0 = esconde a seção de progresso)</label>
       <input type="number" id="inputTotalPaginas" min="0" value="${livro.totalPaginas||0}">
+      <button class="editar-toggle" type="button" onclick="buscarSugestoes()">✨ buscar sinopse, capa, páginas e gênero automaticamente</button>
+      <span class="salvando" id="statusSugestoes"></span>
       <button class="btn-ouro" onclick="salvarCabecalho()">Salvar detalhes</button>
     </div>`
     : `
