@@ -258,15 +258,35 @@ async function buscarInfoOpenLibrary(titulo, autor){
   }catch(e){ return null; } // sem internet ou API fora do ar, tudo bem
 }
 
-// Combina Google Books (melhor pra sinopse/gênero) e Open Library (não exige
-// chave de API e não tem cota, então é a fonte principal pra capa/páginas).
+async function buscarInfoWikipedia(titulo, autor){
+  try{
+    const busca = new URLSearchParams({
+      action: 'query', list: 'search', format: 'json', origin: '*',
+      srsearch: `${titulo} livro ${autor||''}`.trim(), srlimit: '1'
+    });
+    const buscaResp = await fetch(`https://pt.wikipedia.org/w/api.php?${busca}`);
+    const buscaJson = await buscaResp.json();
+    const pagina = buscaJson.query && buscaJson.query.search && buscaJson.query.search[0] && buscaJson.query.search[0].title;
+    if(!pagina) return null;
+
+    const resumoResp = await fetch(`https://pt.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pagina)}`);
+    const resumoJson = await resumoResp.json();
+    return resumoJson.extract ? { descricao: resumoJson.extract } : null;
+  }catch(e){ return null; } // sem internet, sem página correspondente, tudo bem
+}
+
+// Combina três fontes gratuitas e sem chave de API:
+// Wikipédia PT (melhor sinopse, em português) > Google Books (sinopse/gênero
+// como alternativa, quando não recusa a busca anônima) > Open Library (não
+// tem cota nenhuma, por isso é a fonte principal pra capa/páginas).
 async function buscarInfoLivro(titulo, autor){
   const chave = `${titulo}|${autor||''}`;
   if(infoLivroCache.has(chave)) return infoLivroCache.get(chave);
 
-  const [google, openLib] = await Promise.all([
+  const [google, openLib, wikipedia] = await Promise.all([
     buscarInfoGoogleBooks(titulo, autor),
-    buscarInfoOpenLibrary(titulo, autor)
+    buscarInfoOpenLibrary(titulo, autor),
+    buscarInfoWikipedia(titulo, autor)
   ]);
 
   const capaGoogle = google && google.imageLinks && google.imageLinks.thumbnail
@@ -275,7 +295,7 @@ async function buscarInfoLivro(titulo, autor){
     ? `https://covers.openlibrary.org/b/id/${openLib.cover_i}-L.jpg` : null;
 
   const info = {
-    descricao: (google && google.description) || null,
+    descricao: (wikipedia && wikipedia.descricao) || (google && google.description) || null,
     paginas: (openLib && openLib.number_of_pages_median) || (google && google.pageCount) || null,
     capa: capaOpenLibrary || capaGoogle,
     generos: (google && google.categories && google.categories.length)
