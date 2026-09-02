@@ -258,15 +258,19 @@ async function buscarInfoOpenLibrary(titulo, autor){
   }catch(e){ return null; } // sem internet ou API fora do ar, tudo bem
 }
 
+async function buscarPaginaWikipedia(srsearch){
+  const busca = new URLSearchParams({ action: 'query', list: 'search', format: 'json', origin: '*', srsearch, srlimit: '1' });
+  const resp = await fetch(`https://pt.wikipedia.org/w/api.php?${busca}`);
+  const json = await resp.json();
+  return (json.query && json.query.search && json.query.search[0] && json.query.search[0].title) || null;
+}
+
 async function buscarInfoWikipedia(titulo, autor){
   try{
-    const busca = new URLSearchParams({
-      action: 'query', list: 'search', format: 'json', origin: '*',
-      srsearch: `${titulo} livro ${autor||''}`.trim(), srlimit: '1'
-    });
-    const buscaResp = await fetch(`https://pt.wikipedia.org/w/api.php?${busca}`);
-    const buscaJson = await buscaResp.json();
-    const pagina = buscaJson.query && buscaJson.query.search && buscaJson.query.search[0] && buscaJson.query.search[0].title;
+    // Tenta primeiro um match exato de título (o mais confiável pra achar o
+    // artigo certo); se não achar, cai pra uma busca mais solta com o autor.
+    const pagina = await buscarPaginaWikipedia(`intitle:"${titulo}"`)
+      || await buscarPaginaWikipedia(`${titulo} ${autor||''}`.trim());
     if(!pagina) return null;
 
     const resumoResp = await fetch(`https://pt.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pagina)}`);
